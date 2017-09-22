@@ -34,13 +34,16 @@ Options possible:
 * **`timeout`** `number` timeout in ms (*by default* is 30000)
 * **`allowErrorCode`** `boolean` 4xx and 5xx response code is correct (*by default* no)
 
+Check callback type
+
+      if arguments.length >= 2 and not help.checkType callback, 'function'
+        throw new TypeError "`callback` should be a function"
+
 Break from create HTTPing if arguments broken function
 
       escape = (error) ->
         if callback? and help.checkType callback, 'function'
-          callback
-            type: 'error'
-            error: error
+          callback error
           return
         throw error
         return
