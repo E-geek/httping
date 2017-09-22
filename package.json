@@ -1,0 +1,41 @@
+{
+  "name": "httping",
+  "version": "0.0.1",
+  "description": "HTTPing util for check a web-service avialable and get timing",
+  "main": "bin/httping.js",
+  "bin": {
+    "httping": "help.js"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "coffee -o bin -c src/*",
+    "cover": "istanbul cover -x 'lib/**' ./node_modules/.bin/_mocha -- --compilers coffee:coffee-script/register -r coffee-coverage/register-istanbul -r chai tests",
+    "test": "mocha -c -r chai --compilers coffee:coffee-script/register tests",
+    "lint": "coffeelint lib/**"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/E-geek/httping.git"
+  },
+  "keywords": [
+    "httping",
+    "ping"
+  ],
+  "author": "E-geek",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "=3.5.0",
+    "coffee-coverage": "^1.0.1",
+    "coffee-script": "=1.9.3",
+    "coffeelint": "^1.15.7",
+    "coveralls": "^2.11.9",
+    "istanbul": "^0.4.3",
+    "mocha": "=2.4.5"
+  },
+  "bugs": {
+    "url": "https://github.com/E-geek/httping/issues"
+  },
+  "homepage": "https://github.com/E-geek/httping#readme"
+}
