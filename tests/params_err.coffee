@@ -1,10 +1,24 @@
 { assert } = require 'chai'
-{ httping }= require '../src/httping.litcoffee'
+{ httping, HTTPing, HTTPEvent }= require '../src/httping.litcoffee'
+{ CSEvent, CSEmitter } = require 'cstd'
 
 describe 'Check type and range of parameters', ->
   describe 'interface ok', ->
     it 'two params', ->
       assert.lengthOf httping, 2
+      return
+
+    it 'HTTPing class', ->
+      assert.isFunction HTTPing
+      assert.lengthOf HTTPing, 1
+      assert.isNull HTTPing::options
+      return
+
+    it 'HTTPEvent class', ->
+      assert.isFunction HTTPEvent
+      assert.lengthOf HTTPEvent, 1
+      for prop in ['name', 'value', 'target', 'url', 'seqIdx', 'diffTime']
+        assert.property HTTPEvent::, prop
       return
 
   describe 'check options', ->
@@ -27,13 +41,17 @@ describe 'Check type and range of parameters', ->
       for variable in [ 0, yes, undefined, null ]
         httping variable, (e) ->
           assert.ok e
-          assert.instanceOf e, TypeError
-          assert.equal e.message, 'options is require and must be an Object
+          assert.instanceOf e, CSEvent
+          assert.instanceOf e.value, TypeError
+          assert.equal e.name, 'error'
+          assert.equal e.value.message, 'options is require and must be an Object
             or a String'
       httping [], (e) ->
         assert.ok e
-        assert.instanceOf e, TypeError
-        assert.equal e.message, '`url` or `host` is required params'
+        assert.instanceOf e, CSEvent
+        assert.instanceOf e.value, TypeError
+        assert.equal e.name, 'error'
+        assert.equal e.value.message, '`url` or `host` is required params'
         done()
       return
 

@@ -5,17 +5,44 @@ It is the single object with a methods for check a HTTP(S) server is
 (un)avialable. We can create the instance with settings for rerun or
 run one execute.
 
+HTTPing это аналог ЮНИКС-утилиты httping, но в виде библиотеки для NODE.JS
+Это единичный объект с методами проверки (не) доступности http(s) серверов.
+Возращаемый объект можно переиспользовать, останавливать,
+запускать и получать да сбрасывать статистику.
+
 First. We require internal instruments and connection module.
+
+Первое. Мы получаем внутренние инструменты и модули для соединений.
 
     help = require './help'
 
     url = require 'url'
     http = require 'http'
     https = require 'https'
+    { CSEvent, CSEmitter } = require 'cstd'
+
+    class HTTPEvent extends CSEvent
+      url: ''
+      seqIdx: 0
+      diffTime: 0
+      constructor: ({ @url, @seqIdx, @diffTime, name, value, target }) ->
+        super name, target, value
+
+    class HTTPing extends CSEmitter
+      options: null
+
+      constructor: (@options) ->
+        super ['ok', 'fail', 'start', 'end', 'error'
+          'change', 'change:toOk', 'change:toFail']
 
 This is the provider to HTTPing class. Argument `options` is a require.
 Argument `callback` not require and if it missing, need setup listeners
-to the events 'all', 'ok', 'fail'. Callback take the argument `Event`.
+to the events 'ok', 'fail'. Callback take the argument `Event`.
+
+Корневой метод HTTPing-а. Аргумент `option` обязательный. Второй аргумент
+`callback` не обязателен и если опущен, то объекту следует назначить
+слушателей хотя бы для событий `ok` и `fail`. `callabck` принимает
+`Event` со всеми событиями.
 
     httping = (options, callback = null) ->
       if help.checkType options, 'string'
@@ -33,6 +60,7 @@ Options possible:
 * **`interval`** `number` delay between each ping in ms, *by default* is `1000`
 * **`timeout`** `number` timeout in ms (*by default* is 30000)
 * **`allowErrorCode`** `boolean` 4xx and 5xx response code is correct (*by default* no)
+* **`sendData`** `string|buffer|function<string|buffer>` data or generator of data for POST send (*by default* null)
 
 Check callback type
 
@@ -43,7 +71,7 @@ Break from create HTTPing if arguments broken function
 
       escape = (error) ->
         if callback? and help.checkType callback, 'function'
-          callback error
+          callback new CSEvent 'error', new HTTPing, error
           return
         throw error
         return
@@ -77,6 +105,14 @@ interface. Every param must be normal type.
           return escape new TypeError "unknown name option: #{name}"
         if not help.checkType value, typeTable[name]
           return escape new TypeError "incorrect type #{name} option"
+
+      if options.sendData?
+        { sendData } = options
+        sendDataOk = typeof sendData in ['string', 'function']
+        sendDataOk = sendDataOk or sendData instanceof Buffer
+        unless sendDataOk
+          return escape new TypeError "`sendData` must be string or a Buffer \
+            or function"
 
 Parse url and fill params or use params from options with check types
 
@@ -116,7 +152,7 @@ Check enums (protocol and method) and range (port, timeout, interval and count)
       if requestOptions.protocol not in ['http:', 'https:']
         return escape new TypeError 'Protocol must be "http:" or "https:"'
 
-      if requestOptions.method not in ['GET', 'POST', 'OPTIONS']
+      if requestOptions.method not in ['GET', 'POST', 'HEAD', 'OPTIONS']
         return escape new TypeError 'Support methods: "GET", "POST", "OPTIONS"'
 
       if requestOptions.port < 0 or requestOptions.port >= 2**16 or
@@ -185,10 +221,9 @@ message to log and prevend dual set data
         req = agent.request requestOptions, (res) ->
           receiveData = 0
           chunks = []
-          if not options.allowErrorCode and
-            (res.statusCode > 399 or res.statusCode < 200)
-              stopReq 1, res # error code
-              return
+          if not options.allowErrorCode and res.statusCode >= 400
+            stopReq 1, res # error code
+            return
           res.on 'data', (chunk) ->
             chunks.push chunk
             receiveData += chunk.length
@@ -226,4 +261,4 @@ message to log and prevend dual set data
 
 Export this function
 
-    module.exports = { httping }
+    module.exports = { httping, HTTPing, HTTPEvent }

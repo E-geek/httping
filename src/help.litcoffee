@@ -22,3 +22,5 @@ Check value for floating point exists
 Wait is classic function for coffee
 
       wait: (time, fn) -> setTimeout fn, time
+
+I don't know
